@@ -1,2 +1,6 @@
-# unknowntxd
-Аналог Magic Txd нативно работающий на линуксе
+# UnknownTxd
+
+UnknownTxd - аналог Magic Txd нативно работающий на линуксе
+Позволяет открывать .txd файлы и работать с текстурами внутри
+
+![UnknownTxd](img1.png)
