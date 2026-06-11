@@ -10,6 +10,22 @@
 
 using RenderWare::CompressionType;
 
+namespace
+{
+    int NearestPowerOfTwo(int Value)
+    {
+        if (Value < 1)
+            Value = 1;
+        if (Value > 4096)
+            Value = 4096;
+        int Lower = 1;
+        while (Lower * 2 <= Value)
+            Lower *= 2;
+        int Upper = Lower * 2;
+        return (Value - Lower < Upper - Value) ? Lower : Upper;
+    }
+}
+
 void MainWindow::OpenFile(const std::string& Path)
 {
     std::string Error;
@@ -363,13 +379,17 @@ void MainWindow::RenderResizePopup()
         ImGui::InputInt("Width", &ResizeWidth);
         ImGui::InputInt("Height", &ResizeHeight);
 
+        ImGui::TextDisabled("Sizes snap to powers of two (game requirement)");
+
         if (ImGui::Button("Apply", ImVec2(120, 0)))
         {
             if (HasSelection() && ResizeWidth > 0 && ResizeHeight > 0)
             {
-                Dictionary.ResizeTexture(SelectedIndex, ResizeWidth, ResizeHeight);
+                int FinalWidth = NearestPowerOfTwo(ResizeWidth);
+                int FinalHeight = NearestPowerOfTwo(ResizeHeight);
+                Dictionary.ResizeTexture(SelectedIndex, FinalWidth, FinalHeight);
                 UpdatePreview();
-                StatusMessage = "Resized to " + std::to_string(ResizeWidth) + " x " + std::to_string(ResizeHeight);
+                StatusMessage = "Resized to " + std::to_string(FinalWidth) + " x " + std::to_string(FinalHeight);
             }
             ImGui::CloseCurrentPopup();
         }

@@ -1,6 +1,5 @@
 #include "TextureDictionary.h"
 
-#include <algorithm>
 #include <cstdio>
 #include <stdexcept>
 
@@ -15,6 +14,19 @@ namespace RenderWare
 {
     namespace
     {
+        int NearestPowerOfTwo(int Value)
+        {
+            if (Value < 1)
+                Value = 1;
+            if (Value > 4096)
+                Value = 4096;
+            int Lower = 1;
+            while (Lower * 2 <= Value)
+                Lower *= 2;
+            int Upper = Lower * 2;
+            return (Value - Lower < Upper - Value) ? Lower : Upper;
+        }
+
         std::vector<std::uint8_t> ReadWholeFile(const std::string& Path)
         {
             std::FILE* Handle = std::fopen(Path.c_str(), "rb");
@@ -258,15 +270,7 @@ namespace RenderWare
         Description.Format = RasterFormat::Format8888;
         Description.Compression = Item.EditCompression;
         Item.PixelFormatName = DescribeFormat(Description);
-
-        int Levels = 1;
-        int Largest = std::max(Item.ImageWidth, Item.ImageHeight);
-        while (Largest > 1)
-        {
-            Largest >>= 1;
-            ++Levels;
-        }
-        Item.MipLevelCount = Levels;
+        Item.MipLevelCount = 1;
     }
 
     bool TextureDictionary::ReplaceTexture(int Index, const Image& Source)
@@ -274,9 +278,15 @@ namespace RenderWare
         if (Index < 0 || Index >= static_cast<int>(LoadedTextures.size()) || Source.IsEmpty())
             return false;
 
+        int TargetWidth = NearestPowerOfTwo(Source.Width());
+        int TargetHeight = NearestPowerOfTwo(Source.Height());
+        Image Fitted = (TargetWidth == Source.Width() && TargetHeight == Source.Height())
+                           ? Source
+                           : ImageOps::Resize(Source, TargetWidth, TargetHeight);
+
         Texture& Item = LoadedTextures[Index];
-        Item.EditSource = Source;
-        Item.EditCompression = ImageOps::DetectAlpha(Source) ? CompressionType::Dxt5 : CompressionType::Dxt1;
+        Item.EditSource = Fitted;
+        Item.EditCompression = ImageOps::DetectAlpha(Fitted) ? CompressionType::Dxt5 : CompressionType::Dxt1;
         Item.Edited = true;
         RefreshEditedTexture(Item);
         Modified = true;
@@ -296,7 +306,7 @@ namespace RenderWare
         if (!Item.Edited)
             Item.EditCompression = ImageOps::DetectAlpha(Base) ? CompressionType::Dxt5 : CompressionType::Dxt1;
 
-        Item.EditSource = ImageOps::Resize(Base, NewWidth, NewHeight);
+        Item.EditSource = ImageOps::Resize(Base, NearestPowerOfTwo(NewWidth), NearestPowerOfTwo(NewHeight));
         Item.Edited = true;
         RefreshEditedTexture(Item);
         Modified = true;

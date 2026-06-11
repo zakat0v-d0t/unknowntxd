@@ -13,18 +13,6 @@ namespace RenderWare
     {
         constexpr std::uint32_t D3dFmtA8R8G8B8 = 21;
 
-        int CountMipLevels(int Width, int Height)
-        {
-            int Levels = 1;
-            int Largest = std::max(Width, Height);
-            while (Largest > 1)
-            {
-                Largest >>= 1;
-                ++Levels;
-            }
-            return Levels;
-        }
-
         void GatherBlock(const Image& Source, int BlockX, int BlockY, std::uint8_t* Output)
         {
             for (int Row = 0; Row < 4; ++Row)
@@ -123,37 +111,29 @@ namespace RenderWare
         CompressionType Compression = Item.EditCompression;
         bool HasAlpha = Compression == CompressionType::Dxt1 ? false : ImageOps::DetectAlpha(Base);
 
-        int LevelCount = CountMipLevels(Base.Width(), Base.Height());
-
-        std::vector<std::vector<std::uint8_t>> Levels;
-        Levels.reserve(LevelCount);
-        for (int Level = 0; Level < LevelCount; ++Level)
-        {
-            int LevelWidth = std::max(1, Base.Width() >> Level);
-            int LevelHeight = std::max(1, Base.Height() >> Level);
-            Image LevelImage = (Level == 0) ? Base : ImageOps::Resize(Base, LevelWidth, LevelHeight);
-            Levels.push_back(EncodeLevel(LevelImage, Compression));
-        }
+        std::vector<std::uint8_t> BaseLevel = EncodeLevel(Base, Compression);
 
         std::uint32_t RasterFormatBits;
         std::uint8_t Depth;
-        if (Compression == CompressionType::None)
+        switch (Compression)
         {
+        case CompressionType::Dxt1:
+            RasterFormatBits = HasAlpha ? RasterFormat::Format1555 : RasterFormat::Format565;
+            Depth = 16;
+            break;
+        case CompressionType::Dxt3:
+            RasterFormatBits = RasterFormat::Format4444;
+            Depth = 16;
+            break;
+        case CompressionType::Dxt5:
+            RasterFormatBits = RasterFormat::Format8888;
+            Depth = 16;
+            break;
+        default:
             RasterFormatBits = RasterFormat::Format8888;
             Depth = 32;
+            break;
         }
-        else if (Compression == CompressionType::Dxt1)
-        {
-            RasterFormatBits = RasterFormat::Format565;
-            Depth = 16;
-        }
-        else
-        {
-            RasterFormatBits = RasterFormat::Format8888;
-            Depth = 16;
-        }
-        if (LevelCount > 1)
-            RasterFormatBits |= RasterFormat::Mipmap;
 
         bool IsD3d9 = Item.Platform != static_cast<std::uint32_t>(Platform::Direct3D8);
         std::uint32_t PlatformId = IsD3d9 ? static_cast<std::uint32_t>(Platform::Direct3D9)
@@ -196,15 +176,12 @@ namespace RenderWare
         Struct.WriteU16(static_cast<std::uint16_t>(Base.Width()));
         Struct.WriteU16(static_cast<std::uint16_t>(Base.Height()));
         Struct.WriteU8(Depth);
-        Struct.WriteU8(static_cast<std::uint8_t>(LevelCount));
+        Struct.WriteU8(1);
         Struct.WriteU8(Item.RasterType);
         Struct.WriteU8(FlagsOrCompression);
 
-        for (const std::vector<std::uint8_t>& LevelData : Levels)
-        {
-            Struct.WriteU32(static_cast<std::uint32_t>(LevelData.size()));
-            Struct.WriteBytes(LevelData.data(), LevelData.size());
-        }
+        Struct.WriteU32(static_cast<std::uint32_t>(BaseLevel.size()));
+        Struct.WriteBytes(BaseLevel.data(), BaseLevel.size());
 
         BinaryWriter Native;
         WriteChunkHeader(Native, ChunkType::Struct, static_cast<std::uint32_t>(Struct.Size()), Version);
