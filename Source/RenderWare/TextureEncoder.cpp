@@ -111,7 +111,19 @@ namespace RenderWare
         CompressionType Compression = Item.EditCompression;
         bool HasAlpha = Compression == CompressionType::Dxt1 ? false : ImageOps::DetectAlpha(Base);
 
-        std::vector<std::uint8_t> BaseLevel = EncodeLevel(Base, Compression);
+        std::vector<Image> Levels;
+        Levels.push_back(Base);
+        if (Item.EditGenerateMips)
+        {
+            int LevelWidth = Base.Width();
+            int LevelHeight = Base.Height();
+            while (LevelWidth > 1 || LevelHeight > 1)
+            {
+                LevelWidth = LevelWidth > 1 ? LevelWidth / 2 : 1;
+                LevelHeight = LevelHeight > 1 ? LevelHeight / 2 : 1;
+                Levels.push_back(ImageOps::Resize(Base, LevelWidth, LevelHeight));
+            }
+        }
 
         std::uint32_t RasterFormatBits;
         std::uint8_t Depth;
@@ -134,6 +146,9 @@ namespace RenderWare
             Depth = 32;
             break;
         }
+
+        if (Levels.size() > 1)
+            RasterFormatBits |= RasterFormat::Mipmap;
 
         bool IsD3d9 = Item.Platform != static_cast<std::uint32_t>(Platform::Direct3D8);
         std::uint32_t PlatformId = IsD3d9 ? static_cast<std::uint32_t>(Platform::Direct3D9)
@@ -176,12 +191,16 @@ namespace RenderWare
         Struct.WriteU16(static_cast<std::uint16_t>(Base.Width()));
         Struct.WriteU16(static_cast<std::uint16_t>(Base.Height()));
         Struct.WriteU8(Depth);
-        Struct.WriteU8(1);
+        Struct.WriteU8(static_cast<std::uint8_t>(Levels.size()));
         Struct.WriteU8(Item.RasterType);
         Struct.WriteU8(FlagsOrCompression);
 
-        Struct.WriteU32(static_cast<std::uint32_t>(BaseLevel.size()));
-        Struct.WriteBytes(BaseLevel.data(), BaseLevel.size());
+        for (const Image& Level : Levels)
+        {
+            std::vector<std::uint8_t> Encoded = EncodeLevel(Level, Compression);
+            Struct.WriteU32(static_cast<std::uint32_t>(Encoded.size()));
+            Struct.WriteBytes(Encoded.data(), Encoded.size());
+        }
 
         BinaryWriter Native;
         WriteChunkHeader(Native, ChunkType::Struct, static_cast<std::uint32_t>(Struct.Size()), Version);

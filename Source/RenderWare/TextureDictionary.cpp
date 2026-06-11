@@ -250,6 +250,7 @@ namespace RenderWare
         Result.ImageHeight = Height;
         Result.MipLevelCount = MipLevels;
         Result.AlphaPresent = HasAlpha;
+        Result.SourceCompression = Description.Compression;
         Result.Bitmap = PixelConverter::Decode(Description, BaseLevel, Palette);
         Result.Platform = PlatformId;
         Result.FilterAddressing = FilterAddressing;
@@ -270,7 +271,7 @@ namespace RenderWare
         Description.Format = RasterFormat::Format8888;
         Description.Compression = Item.EditCompression;
         Item.PixelFormatName = DescribeFormat(Description);
-        Item.MipLevelCount = 1;
+        Item.MipLevelCount = Item.EditGenerateMips ? Item.FullMipLevels() : 1;
     }
 
     bool TextureDictionary::ReplaceTexture(int Index, const Image& Source)
@@ -325,6 +326,51 @@ namespace RenderWare
         Item.EditCompression = Compression;
         Item.Edited = true;
         RefreshEditedTexture(Item);
+        Modified = true;
+        return true;
+    }
+
+    bool TextureDictionary::SetTextureMipmaps(int Index, bool Generate)
+    {
+        if (Index < 0 || Index >= static_cast<int>(LoadedTextures.size()))
+            return false;
+
+        Texture& Item = LoadedTextures[Index];
+        if (!Item.Edited)
+        {
+            Item.EditSource = Item.Bitmap;
+            Item.EditCompression = Item.SourceCompression;
+        }
+        if (Item.EditSource.IsEmpty())
+            return false;
+
+        Item.EditGenerateMips = Generate;
+        Item.Edited = true;
+        RefreshEditedTexture(Item);
+        Modified = true;
+        return true;
+    }
+
+    bool TextureDictionary::RenameTexture(int Index, const std::string& Name, const std::string& Mask)
+    {
+        if (Index < 0 || Index >= static_cast<int>(LoadedTextures.size()))
+            return false;
+
+        auto PatchFixed = [](std::vector<std::uint8_t>& Buffer, std::size_t Offset, const std::string& Value) {
+            for (std::size_t Position = 0; Position < 32; ++Position)
+                Buffer[Offset + Position] = Position < Value.size() ? static_cast<std::uint8_t>(Value[Position]) : 0;
+        };
+
+        Texture& Item = LoadedTextures[Index];
+        Item.TextureName = Name;
+        Item.MaskTextureName = Mask;
+
+        if (!Item.Edited && Item.RawChunk.size() >= 96)
+        {
+            PatchFixed(Item.RawChunk, 32, Name);
+            PatchFixed(Item.RawChunk, 64, Mask);
+        }
+
         Modified = true;
         return true;
     }
@@ -384,5 +430,42 @@ namespace RenderWare
             OutError = Error.what();
             return false;
         }
+    }
+
+    bool TextureDictionary::AddTexture(const std::string& Name, const Image& Source)
+    {
+        if (Source.IsEmpty()) return false;
+        
+        Texture Item;
+        Item.TextureName = Name;
+        Item.Platform = static_cast<std::uint32_t>(Platform::Direct3D9);
+        Item.FilterAddressing = 0x1101;
+        Item.RasterType = 0x4; // Texture
+        
+        LoadedTextures.push_back(Item);
+        int Index = static_cast<int>(LoadedTextures.size()) - 1;
+        ReplaceTexture(Index, Source); 
+        Modified = true;
+        return true;
+    }
+
+    bool TextureDictionary::RemoveTexture(int Index)
+    {
+        if (Index < 0 || Index >= static_cast<int>(LoadedTextures.size()))
+            return false;
+            
+        LoadedTextures.erase(LoadedTextures.begin() + Index);
+        Modified = true;
+        return true;
+    }
+
+    bool TextureDictionary::InsertTexture(int Index, const Texture& Item)
+    {
+        if (Index < 0 || Index > static_cast<int>(LoadedTextures.size()))
+            return false;
+            
+        LoadedTextures.insert(LoadedTextures.begin() + Index, Item);
+        Modified = true;
+        return true;
     }
 }

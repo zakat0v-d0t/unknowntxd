@@ -1,19 +1,16 @@
-#include <cstdio>
+#include <QApplication>
+#include "Application/MainWindow.h"
 
-#include "Application/Application.h"
-
-int main(int Argc, char** Argv)
+int main(int argc, char* argv[])
 {
-    Application App;
-    if (!App.Initialise())
-    {
-        std::fprintf(stderr, "Failed to initialise application\n");
-        return 1;
-    }
-
-    if (Argc > 1)
-        App.LoadFile(Argv[1]);
-
-    App.Run();
-    return 0;
+    QApplication app(argc, argv);
+    app.setApplicationName("UnknownTxd");
+    
+    MainWindow window;
+    window.show();
+    
+    if (argc > 1)
+        window.OpenFile(argv[1]);
+        
+    return app.exec();
 }

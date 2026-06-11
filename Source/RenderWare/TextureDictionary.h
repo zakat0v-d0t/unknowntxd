@@ -20,6 +20,12 @@ namespace RenderWare
         bool ReplaceTexture(int Index, const Image& Source);
         bool ResizeTexture(int Index, int NewWidth, int NewHeight);
         bool SetTextureCompression(int Index, CompressionType Compression);
+        bool SetTextureMipmaps(int Index, bool Generate);
+        bool RenameTexture(int Index, const std::string& Name, const std::string& Mask);
+
+        bool AddTexture(const std::string& Name, const Image& Source);
+        bool InsertTexture(int Index, const Texture& Item);
+        bool RemoveTexture(int Index);
 
         const std::vector<Texture>& Textures() const { return LoadedTextures; }
         bool IsLoaded() const { return Loaded; }

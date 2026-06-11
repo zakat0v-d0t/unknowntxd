@@ -22,6 +22,20 @@ namespace RenderWare
         const Image& Pixels() const { return Bitmap; }
         bool IsEdited() const { return Edited; }
 
+        int FullMipLevels() const
+        {
+            int Width = ImageWidth;
+            int Height = ImageHeight;
+            int Count = 1;
+            while (Width > 1 || Height > 1)
+            {
+                Width = Width > 1 ? Width / 2 : 1;
+                Height = Height > 1 ? Height / 2 : 1;
+                ++Count;
+            }
+            return Count;
+        }
+
         std::string TextureName;
         std::string MaskTextureName;
         std::string PixelFormatName;
@@ -36,8 +50,11 @@ namespace RenderWare
         std::uint8_t RasterType = 4;
         std::vector<std::uint8_t> RawChunk;
 
+        CompressionType SourceCompression = CompressionType::None;
+
         bool Edited = false;
         Image EditSource;
         CompressionType EditCompression = CompressionType::None;
+        bool EditGenerateMips = false;
     };
 }
