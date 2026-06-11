@@ -86,67 +86,164 @@ void MainWindow::SetupUi()
 
 void MainWindow::SetupMenus()
 {
-    QMenu* fileMenu = menuBar()->addMenu("File");
+    MenuFile = menuBar()->addMenu("File");
 
-    QAction* openAction = fileMenu->addAction("Open");
-    openAction->setShortcut(QKeySequence::Open);
-    connect(openAction, &QAction::triggered, this, &MainWindow::RequestOpenDialog);
+    ActionOpen = MenuFile->addAction("Open");
+    ActionOpen->setShortcut(QKeySequence::Open);
+    connect(ActionOpen, &QAction::triggered, this, &MainWindow::RequestOpenDialog);
 
-    QAction* saveAction = fileMenu->addAction("Save");
-    saveAction->setShortcut(QKeySequence::Save);
-    connect(saveAction, &QAction::triggered, this, &MainWindow::SaveCurrent);
+    ActionSave = MenuFile->addAction("Save");
+    ActionSave->setShortcut(QKeySequence::Save);
+    connect(ActionSave, &QAction::triggered, this, &MainWindow::SaveCurrent);
 
-    QAction* saveAsAction = fileMenu->addAction("Save As");
-    connect(saveAsAction, &QAction::triggered, this, &MainWindow::RequestSaveAsDialog);
+    ActionSaveAs = MenuFile->addAction("Save As");
+    connect(ActionSaveAs, &QAction::triggered, this, &MainWindow::RequestSaveAsDialog);
 
-    fileMenu->addSeparator();
-    QAction* quitAction = fileMenu->addAction("Quit");
-    quitAction->setShortcut(QKeySequence::Quit);
-    connect(quitAction, &QAction::triggered, this, &QMainWindow::close);
+    MenuFile->addSeparator();
+    ActionQuit = MenuFile->addAction("Quit");
+    ActionQuit->setShortcut(QKeySequence::Quit);
+    connect(ActionQuit, &QAction::triggered, this, &QMainWindow::close);
 
-    QMenu* editMenu = menuBar()->addMenu("Edit");
+    MenuEdit = menuBar()->addMenu("Edit");
 
     // Undo — only via Ctrl+Z, no visible menu item
     QShortcut* undoShortcut = new QShortcut(QKeySequence::Undo, this);
     connect(undoShortcut, &QShortcut::activated, this, &MainWindow::UndoDelete);
 
-    QAction* addAction = editMenu->addAction("Add");
-    connect(addAction, &QAction::triggered, this, &MainWindow::RequestAddDialog);
+    ActionAdd = MenuEdit->addAction("Add");
+    connect(ActionAdd, &QAction::triggered, this, &MainWindow::RequestAddDialog);
 
-    QAction* renameAction = editMenu->addAction("Rename");
-    connect(renameAction, &QAction::triggered, this, &MainWindow::RequestRename);
+    ActionRename = MenuEdit->addAction("Rename");
+    connect(ActionRename, &QAction::triggered, this, &MainWindow::RequestRename);
 
-    QAction* replaceAction = editMenu->addAction("Replace");
-    connect(replaceAction, &QAction::triggered, this, &MainWindow::RequestReplaceDialog);
+    ActionReplace = MenuEdit->addAction("Replace");
+    connect(ActionReplace, &QAction::triggered, this, &MainWindow::RequestReplaceDialog);
 
-    QAction* deleteAction = editMenu->addAction("Delete");
-    deleteAction->setShortcut(QKeySequence::Delete);
-    connect(deleteAction, &QAction::triggered, this, &MainWindow::RequestDeleteSelected);
+    ActionDelete = MenuEdit->addAction("Delete");
+    ActionDelete->setShortcut(QKeySequence::Delete);
+    connect(ActionDelete, &QAction::triggered, this, &MainWindow::RequestDeleteSelected);
 
-    editMenu->addSeparator();
+    MenuEdit->addSeparator();
 
-    QAction* exportAction = editMenu->addAction("Export");
-    connect(exportAction, &QAction::triggered, this, &MainWindow::RequestExportDialog);
+    ActionExport = MenuEdit->addAction("Export");
+    connect(ActionExport, &QAction::triggered, this, &MainWindow::RequestExportDialog);
 
-    QAction* exportAllAction = editMenu->addAction("Export All");
-    connect(exportAllAction, &QAction::triggered, this, &MainWindow::RequestExportAllDialog);
+    ActionExportAll = MenuEdit->addAction("Export All");
+    connect(ActionExportAll, &QAction::triggered, this, &MainWindow::RequestExportAllDialog);
 
-    QAction* resizeAction = editMenu->addAction("Resize");
-    connect(resizeAction, &QAction::triggered, this, &MainWindow::RequestResize);
+    ActionResize = MenuEdit->addAction("Resize");
+    connect(ActionResize, &QAction::triggered, this, &MainWindow::RequestResize);
 
-    QMenu* compMenu = editMenu->addMenu("Compression");
-    connect(compMenu->addAction("DXT1"), &QAction::triggered, this, &MainWindow::SetCompressionDxt1);
-    connect(compMenu->addAction("DXT3"), &QAction::triggered, this, &MainWindow::SetCompressionDxt3);
-    connect(compMenu->addAction("DXT5"), &QAction::triggered, this, &MainWindow::SetCompressionDxt5);
-    connect(compMenu->addAction("RGBA8888 (uncompressed)"), &QAction::triggered, this, &MainWindow::SetCompressionNone);
+    MenuComp = MenuEdit->addMenu("Compression");
+    ActionCompDxt1 = MenuComp->addAction("DXT1");
+    connect(ActionCompDxt1, &QAction::triggered, this, &MainWindow::SetCompressionDxt1);
+    
+    ActionCompDxt3 = MenuComp->addAction("DXT3");
+    connect(ActionCompDxt3, &QAction::triggered, this, &MainWindow::SetCompressionDxt3);
+    
+    ActionCompDxt5 = MenuComp->addAction("DXT5");
+    connect(ActionCompDxt5, &QAction::triggered, this, &MainWindow::SetCompressionDxt5);
+    
+    ActionCompNone = MenuComp->addAction("RGBA8888 (uncompressed)");
+    connect(ActionCompNone, &QAction::triggered, this, &MainWindow::SetCompressionNone);
 
-    editMenu->addSeparator();
-    connect(editMenu->addAction("Create mip levels"), &QAction::triggered, this, &MainWindow::CreateMipLevels);
-    connect(editMenu->addAction("Clear mip levels"), &QAction::triggered, this, &MainWindow::ClearMipLevels);
+    MenuEdit->addSeparator();
+    
+    ActionCreateMip = MenuEdit->addAction("Create mip levels");
+    connect(ActionCreateMip, &QAction::triggered, this, &MainWindow::CreateMipLevels);
+    
+    ActionClearMip = MenuEdit->addAction("Clear mip levels");
+    connect(ActionClearMip, &QAction::triggered, this, &MainWindow::ClearMipLevels);
 
-    QMenu* viewMenu = menuBar()->addMenu("View");
-    QAction* themeAction = viewMenu->addAction("Toggle Theme");
-    connect(themeAction, &QAction::triggered, this, &MainWindow::ToggleTheme);
+    MenuView = menuBar()->addMenu("View");
+    ActionTheme = MenuView->addAction("Toggle Theme");
+    connect(ActionTheme, &QAction::triggered, this, &MainWindow::ToggleTheme);
+
+    MenuLang = MenuView->addMenu("Language / Язык");
+    
+    ActionLangEn = MenuLang->addAction("English");
+    connect(ActionLangEn, &QAction::triggered, this, &MainWindow::SetLanguageEnglish);
+    
+    ActionLangRu = MenuLang->addAction("Русский");
+    connect(ActionLangRu, &QAction::triggered, this, &MainWindow::SetLanguageRussian);
+
+    RetranslateUi();
+}
+
+void MainWindow::SetLanguageEnglish()
+{
+    CurrentLanguage = Language::English;
+    RetranslateUi();
+}
+
+void MainWindow::SetLanguageRussian()
+{
+    CurrentLanguage = Language::Russian;
+    RetranslateUi();
+}
+
+void MainWindow::RetranslateUi()
+{
+    if (CurrentLanguage == Language::English)
+    {
+        MenuFile->setTitle("File");
+        ActionOpen->setText("Open");
+        ActionSave->setText("Save");
+        ActionSaveAs->setText("Save As");
+        ActionQuit->setText("Quit");
+
+        MenuEdit->setTitle("Edit");
+        ActionAdd->setText("Add");
+        ActionRename->setText("Rename");
+        ActionReplace->setText("Replace");
+        ActionDelete->setText("Delete");
+        ActionExport->setText("Export");
+        ActionExportAll->setText("Export All");
+        ActionResize->setText("Resize");
+
+        MenuComp->setTitle("Compression");
+        ActionCompNone->setText("RGBA8888 (uncompressed)");
+
+        ActionCreateMip->setText("Create mip levels");
+        ActionClearMip->setText("Clear mip levels");
+
+        MenuView->setTitle("View");
+        ActionTheme->setText("Toggle Theme");
+        MenuLang->setTitle("Language / Язык");
+        
+        if (StatusLabel->text() == "Файл не загружен")
+            StatusLabel->setText("No file loaded");
+    }
+    else
+    {
+        MenuFile->setTitle("Файл");
+        ActionOpen->setText("Открыть");
+        ActionSave->setText("Сохранить");
+        ActionSaveAs->setText("Сохранить как");
+        ActionQuit->setText("Выход");
+
+        MenuEdit->setTitle("Правка");
+        ActionAdd->setText("Добавить");
+        ActionRename->setText("Переименовать");
+        ActionReplace->setText("Заменить");
+        ActionDelete->setText("Удалить");
+        ActionExport->setText("Экспорт");
+        ActionExportAll->setText("Экспортировать всё");
+        ActionResize->setText("Изменить размер");
+
+        MenuComp->setTitle("Сжатие");
+        ActionCompNone->setText("RGBA8888 (без сжатия)");
+
+        ActionCreateMip->setText("Создать mip-уровни");
+        ActionClearMip->setText("Удалить mip-уровни");
+
+        MenuView->setTitle("Вид");
+        ActionTheme->setText("Сменить тему");
+        MenuLang->setTitle("Language / Язык");
+        
+        if (StatusLabel->text() == "No file loaded")
+            StatusLabel->setText("Файл не загружен");
+    }
 }
 
 void MainWindow::ApplyTheme()

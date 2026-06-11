@@ -42,6 +42,9 @@ private slots:
     void CreateMipLevels();
     void ClearMipLevels();
 
+    void SetLanguageEnglish();
+    void SetLanguageRussian();
+
 protected:
     void wheelEvent(QWheelEvent* event) override;
     void dragEnterEvent(QDragEnterEvent* event) override;
@@ -61,6 +64,10 @@ private:
     int SelectedIndex = -1;
     bool IsDarkTheme = true;
 
+    enum class Language { English, Russian };
+    Language CurrentLanguage = Language::English;
+    void RetranslateUi();
+
     std::vector<std::pair<int, RenderWare::Texture>> DeleteUndoStack;
 
     QListWidget* TextureList;
@@ -68,4 +75,33 @@ private:
     QLabel* InfoLabel;
     QLabel* StatusLabel;
     float PreviewZoom = 1.0f;
+
+    QMenu* MenuFile;
+    QAction* ActionOpen;
+    QAction* ActionSave;
+    QAction* ActionSaveAs;
+    QAction* ActionQuit;
+    
+    QMenu* MenuEdit;
+    QAction* ActionAdd;
+    QAction* ActionRename;
+    QAction* ActionReplace;
+    QAction* ActionDelete;
+    QAction* ActionExport;
+    QAction* ActionExportAll;
+    QAction* ActionResize;
+    
+    QMenu* MenuComp;
+    QAction* ActionCompDxt1;
+    QAction* ActionCompDxt3;
+    QAction* ActionCompDxt5;
+    QAction* ActionCompNone;
+    QAction* ActionCreateMip;
+    QAction* ActionClearMip;
+    
+    QMenu* MenuView;
+    QAction* ActionTheme;
+    QMenu* MenuLang;
+    QAction* ActionLangEn;
+    QAction* ActionLangRu;
 };
